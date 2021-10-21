@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 package com.azure.communication.common.implementation;
 
-import java.time.ZonedDateTime;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
-import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.PlainJWT;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class JwtTokenMocker {
 
@@ -17,8 +17,8 @@ public class JwtTokenMocker {
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
         builder.claim("skypeid", skypeId);
         LocalDateTime expiresOnTimestamp = LocalDateTime.now().plusSeconds(validForSeconds);
-        ZonedDateTime ldtUTC = expiresOnTimestamp.atZone(ZoneId.of("UTC"));
-        long expSeconds = ldtUTC.toInstant().toEpochMilli() / 1000;
+        ZonedDateTime ldt = expiresOnTimestamp.atZone(ZoneId.systemDefault());
+        long expSeconds = ldt.toInstant().toEpochMilli() / 1000;
         builder.claim("exp", expSeconds);
 
         JWTClaimsSet claims =  builder.build();
