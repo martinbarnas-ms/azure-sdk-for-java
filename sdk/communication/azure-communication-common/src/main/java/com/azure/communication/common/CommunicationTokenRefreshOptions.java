@@ -2,16 +2,19 @@
 // Licensed under the MIT License.
 package com.azure.communication.common;
 
-import java.util.function.Supplier;
 import reactor.core.publisher.Mono;
+
+import java.util.function.Supplier;
 
 /**
  * Options for refreshing CommunicationTokenCredential
  */
 public final class CommunicationTokenRefreshOptions {
+    public static final int DEFAULT_EXPIRING_OFFSET_MINUTES = 5;
     private final Supplier<Mono<String>> tokenRefresher;
     private final boolean refreshProactively;
     private final String initialToken;
+    private final int refreshOffsetMinutes;
 
     /**
      * Creates a CommunicationTokenRefreshOptions object
@@ -26,6 +29,7 @@ public final class CommunicationTokenRefreshOptions {
         this.tokenRefresher = tokenRefresher;
         this.refreshProactively = refreshProactively;
         this.initialToken = null;
+        refreshOffsetMinutes = DEFAULT_EXPIRING_OFFSET_MINUTES;
     }
 
      /**
@@ -42,6 +46,25 @@ public final class CommunicationTokenRefreshOptions {
         this.tokenRefresher = tokenRefresher;
         this.refreshProactively = refreshProactively;
         this.initialToken = initialToken;
+        refreshOffsetMinutes = DEFAULT_EXPIRING_OFFSET_MINUTES;
+    }
+
+    /**
+     * Creates a CommunicationTokenRefreshOptions object
+     *
+     * @param tokenRefresher the token refresher to provide capacity to fetch fresh token
+     * @param refreshProactively when set to true, turn on proactive fetching to call
+     *                           tokenRefresher before token expiry by minutes set
+     *                           with setCallbackOffsetMinutes or default value of
+     *                           two minutes
+     * @param initialToken the optional serialized JWT token
+     * @param refreshOffsetMinutes Refresh token before expiration
+     */
+    public CommunicationTokenRefreshOptions(Supplier<Mono<String>> tokenRefresher, boolean refreshProactively, String initialToken, int refreshOffsetMinutes) {
+        this.tokenRefresher = tokenRefresher;
+        this.refreshProactively = refreshProactively;
+        this.initialToken = initialToken;
+        this.refreshOffsetMinutes = refreshOffsetMinutes;
     }
 
     /**
@@ -63,5 +86,12 @@ public final class CommunicationTokenRefreshOptions {
      */
     public String getInitialToken() {
         return initialToken;
+    }
+
+    /**
+     * @return the refresh offset in minutes
+     */
+    public int getRefreshOffsetMinutes() {
+        return refreshOffsetMinutes;
     }
 }

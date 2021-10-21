@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 package com.azure.communication.common;
 
+import com.azure.communication.common.implementation.TokenParser;
+import com.azure.core.credential.AccessToken;
 import com.azure.core.util.FluxUtil;
 import com.azure.core.util.logging.ClientLogger;
-
 import reactor.core.publisher.Mono;
-
-import com.azure.core.credential.AccessToken;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -17,15 +16,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Supplier;
 
-import com.azure.communication.common.implementation.TokenParser;
+import static com.azure.communication.common.CommunicationTokenRefreshOptions.DEFAULT_EXPIRING_OFFSET_MINUTES;
 
 /**
  * Provide user credential for Communication service user
  */
 public final class CommunicationTokenCredential implements AutoCloseable {
-    private static final int DEFAULT_EXPIRING_OFFSET_MINUTES = 10;
-
     private final ClientLogger logger = new ClientLogger(CommunicationTokenCredential.class);
+    private final CommunicationTokenRefreshOptions tokenRefreshOptions;
 
     private AccessToken accessToken;
     private final TokenParser tokenParser = new TokenParser();
@@ -40,6 +38,7 @@ public final class CommunicationTokenCredential implements AutoCloseable {
      */
     public CommunicationTokenCredential(String token) {
         Objects.requireNonNull(token, "'token' cannot be null.");
+        tokenRefreshOptions = null;
         setToken(token);
     }
 
@@ -55,14 +54,22 @@ public final class CommunicationTokenCredential implements AutoCloseable {
     public CommunicationTokenCredential(CommunicationTokenRefreshOptions tokenRefreshOptions) {
         Supplier<Mono<String>> tokenRefresher = tokenRefreshOptions.getTokenRefresher();
         Objects.requireNonNull(tokenRefresher, "'tokenRefresher' cannot be null.");
+        this.tokenRefreshOptions = tokenRefreshOptions;
         refresher = tokenRefresher;
         if (tokenRefreshOptions.getInitialToken() != null) {
             setToken(tokenRefreshOptions.getInitialToken());
             if (tokenRefreshOptions.isRefreshProactively()) {
-                OffsetDateTime nextFetchTime = accessToken.getExpiresAt().minusMinutes(DEFAULT_EXPIRING_OFFSET_MINUTES);
+                OffsetDateTime nextFetchTime = getNextFetchTime();
                 fetchingTask = new FetchingTask(this, nextFetchTime);
             }
         }
+    }
+
+    private OffsetDateTime getNextFetchTime() {
+        int offsetMinutes = (tokenRefreshOptions != null)
+            ? tokenRefreshOptions.getRefreshOffsetMinutes()
+            : DEFAULT_EXPIRING_OFFSET_MINUTES;
+        return accessToken.getExpiresAt().minusMinutes(offsetMinutes);
     }
 
     /**
@@ -109,7 +116,7 @@ public final class CommunicationTokenCredential implements AutoCloseable {
         accessToken = tokenParser.parseJWTToken(freshToken);
 
         if (fetchingTask != null) {
-            OffsetDateTime nextFetchTime = accessToken.getExpiresAt().minusMinutes(DEFAULT_EXPIRING_OFFSET_MINUTES);
+            OffsetDateTime nextFetchTime = getNextFetchTime();
             fetchingTask.setNextFetchTime(nextFetchTime);
         }
     }
