@@ -5,21 +5,16 @@ package com.azure.communication.common;
 import com.azure.communication.common.implementation.JwtTokenMocker;
 import com.azure.core.util.FluxUtil;
 import com.azure.core.util.logging.ClientLogger;
-
 import org.junit.jupiter.api.Test;
-
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CommunicationTokenCredentialTests {
     private final JwtTokenMocker tokenMocker = new JwtTokenMocker();
@@ -103,7 +98,7 @@ public class CommunicationTokenCredentialTests {
 
     @Test
     public void fresherShouldBeCalledAfterExpiringTime() throws InterruptedException, ExecutionException, IOException {
-        String tokenStr = tokenMocker.generateRawToken("resourceId", "userIdentity", 601);
+        String tokenStr = tokenMocker.generateRawToken("resourceId", "userIdentity", 301);
         immediateFresher.resetCallCount();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         immediateFresher.setOnCallReturn(countDownLatch::countDown);
@@ -269,7 +264,7 @@ public class CommunicationTokenCredentialTests {
 
     @Test
     public void shouldNotModifyTokenWhenRefresherThrows() throws InterruptedException, ExecutionException, IOException {
-        String tokenStr = tokenMocker.generateRawToken("resourceId", "userIdentity", 601);
+        String tokenStr = tokenMocker.generateRawToken("resourceId", "userIdentity", 301);
         CommunicationTokenRefreshOptions tokenRefreshOptions = new CommunicationTokenRefreshOptions(exceptionRefresher, true, tokenStr);
         CommunicationTokenCredential tokenCredential = new CommunicationTokenCredential(tokenRefreshOptions);
         CountDownLatch countDownLatch = new CountDownLatch(1);
