@@ -6,24 +6,29 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 public class JwtTokenMocker {
 
-    public String generateRawToken(String resourceId, String userIdentity, int validForSeconds) {
+    public String generateRawToken(String resourceId, String userIdentity, Instant expiresAt) {
         String skypeId = generateMockId(resourceId, userIdentity);
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
         builder.claim("skypeid", skypeId);
-        LocalDateTime expiresOnTimestamp = LocalDateTime.now().plusSeconds(validForSeconds);
-        ZonedDateTime ldt = expiresOnTimestamp.atZone(ZoneId.systemDefault());
-        long expSeconds = ldt.toInstant().toEpochMilli() / 1000;
+
+        long expSeconds = expiresAt.getEpochSecond();
         builder.claim("exp", expSeconds);
 
         JWTClaimsSet claims =  builder.build();
         JWT idToken = new PlainJWT(claims);
         return idToken.serialize();
+
+    }
+    public String generateRawToken(String resourceId, String userIdentity, int validForSeconds) {
+        String skypeId = generateMockId(resourceId, userIdentity);
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
+        builder.claim("skypeid", skypeId);
+        Instant expiresAt = Instant.now().plusSeconds(validForSeconds);
+        return generateRawToken(resourceId, userIdentity, expiresAt);
     }
 
     public String generateMockId(String resourceId, String userIdentity) {
